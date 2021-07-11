@@ -4,7 +4,7 @@ class Tensor():
     sz = 0
 
     def deepcopy(self, a):
-        if (isinstance(a, list)):
+        if (not isinstance(a, list)):
             return a
         else:
             b = []
@@ -23,6 +23,8 @@ class Tensor():
                 now.append(i % sz_one)
                 i //= sz_one
                 ans.append(now)
+        if (len(ans) == 0):
+            ans.append([])
         return ans
 
     def make_blanc_tensor_array(self, sz, sz_one):
@@ -73,14 +75,16 @@ class Tensor():
         elif (len(args) == 2):
             self.sz = args[0]
             self.sz_one = args[1]
+            if (self.sz == 0):
+                self.sz_one = 0
             self.t = self.make_blanc_tensor_array(self.sz, self.sz_one)
 
     def __add__(self, other):
         ans = Tensor(self)
         if (self.sz_one != other.sz_one):
-            return TypeError("Incorrect size of tensors")
+            raise TypeError("Incorrect size of tensors")
         if (self.sz != other.sz):
-            return TypeError("Incorrect dimension count of tensors")
+            raise TypeError("Incorrect dimension count of tensors")
         for perm in self.generate_permutations(self.sz, self.sz_one):
             ans.set(perm, self.get(perm) + other.get(perm))
         return ans
@@ -91,8 +95,12 @@ class Tensor():
             for perm in self.generate_permutations(self.sz, self.sz_one):
                 ans.set(perm, self.get(perm) * a)
             return ans
-        elif (type(a) == type(self)):
+        elif (isinstance(a, Tensor)):
             other = a
+            if (self.is_num(self.t)):
+                return other * self.t
+            elif (self.is_num(other.t)):
+                return self * other.t
             if (self.sz_one != other.sz_one):
                 raise TypeError("Incorrect size of tensors")
             ans = Tensor(self.sz + other.sz, self.sz_one)
@@ -104,4 +112,48 @@ class Tensor():
             return ans
 
     def __sub__(self, other):
-        return a + b * -1
+        return self + other * -1
+
+    def get_convolution(self, g, a, b, v):
+        if (not isinstance(g, list)):
+            return g
+        if (a == 0 or b == 0):
+            return self.get_convolution(g[v], a - 1, b - 1, v)
+        ans = []
+        for i in range(self.sz_one):
+            ans.append(self.get_convolution(g[i], a - 1, b - 1, v))
+        return ans
+
+    def convolution(self, a, b):
+        if (max(a, b) >= self.sz):
+            raise TypeError("At least one of convolution index more than "
+                            + "tensor dimentions sount")
+        ans = Tensor(self.sz - 2, self.sz_one)
+        for i in range(self.sz_one):
+            ans = ans + Tensor(self.get_convolution(self.t, a, b, i))
+        return ans
+
+
+# Sample of square of norm of vector a in ortonormal bazis, ans other bazis
+a = Tensor([1, 7, 9])
+g = Tensor([
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+])
+A = Tensor([
+    [1, 7, 9],
+    [0, 5, 4],
+    [3, 3, 7],
+])
+B = Tensor([
+    [-23 / 28, 11 / 14, 17 / 28],
+    [-3 / 7, 5 / 7, 1 / 7],
+    [15 / 28, -9 / 14, -5 / 28],
+])
+g_ = ((g * B).convolution(0, 2) * B).convolution(0, 2)
+a_ = (A * a).convolution(1, 2)
+print(g_.t)
+print(a_.t)
+print(((g * a).convolution(0, 2) * a).convolution(0, 1).t)
+print(((g_ * a_).convolution(0, 2) * a_).convolution(0, 1).t)
