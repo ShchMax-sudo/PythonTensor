@@ -4,6 +4,7 @@ class Tensor():
     sz = 0
 
     def deepcopy(self, a):
+        """Creates a full copy of array reccurently"""
         if (not isinstance(a, list)):
             return a
         else:
@@ -13,9 +14,12 @@ class Tensor():
             return b
 
     def is_num(self, a):
+        """Checking, what a is a num"""
         return isinstance(a, int) or isinstance(a, float)
 
     def generate_permutations(self, sz, sz_one):
+        """Generate tensor "indexes" by count of dimensions
+        & size of dimension"""
         ans = []
         for i in range(sz_one ** sz):
             now = []
@@ -28,6 +32,7 @@ class Tensor():
         return ans
 
     def make_blanc_tensor_array(self, sz, sz_one):
+        """Creates clear tensor array of given dimensions count & size"""
         if (sz == 0):
             return 0
         else:
@@ -37,12 +42,14 @@ class Tensor():
             return ans
 
     def get(self, al):
+        """Returns value from tensor "index"""
         g = self.t
         for i in al:
             g = g[i]
         return g
 
     def set(self, al, val):
+        """Sets value to tensor "index"""
         g = self.t
         for i in al[:-1]:
             g = g[i]
@@ -52,6 +59,14 @@ class Tensor():
             self.t = val
 
     def __init__(self, *args):
+        """
+        Creates tensor by:
+
+        1) Another tensor (full copy)
+        2) Tensor array
+        3) Nothing (creates 0)
+        4) Dimensions count & size
+        """
         if (len(args) == 0):
             self.t = 0
             self.sz = 0
@@ -78,8 +93,13 @@ class Tensor():
             if (self.sz == 0):
                 self.sz_one = 0
             self.t = self.make_blanc_tensor_array(self.sz, self.sz_one)
+        else:
+            raise TypeError("Unkown type of tensor constructor")
 
     def __add__(self, other):
+        """Tensor addition"""
+        if (not isinstance(other, Tensor)):
+            raise TypeError("Unknown type of second operand to addition")
         ans = Tensor(self)
         if (self.sz_one != other.sz_one):
             raise TypeError("Incorrect size of tensors")
@@ -90,6 +110,12 @@ class Tensor():
         return ans
 
     def __mul__(self, a):
+        """
+        Tensor multiplication by:
+
+        1) Number
+        2) Another tensor
+        """
         if (self.is_num(a)):
             ans = Tensor(self)
             for perm in self.generate_permutations(self.sz, self.sz_one):
@@ -110,11 +136,17 @@ class Tensor():
                 for j in bs_:
                     ans.set(i + j, self.get(i) * other.get(j))
             return ans
+        else:
+            raise TypeError("Unknown type of second operand to multiply")
 
     def __sub__(self, other):
+        """Tensor substraction"""
+        if (not isinstance(other, Tensor)):
+            raise TypeError("Unknown type of second operand to substraction")
         return self + other * -1
 
     def get_convolution(self, g, a, b, v):
+        """Returns one of tensor convolution summ"""
         if (not isinstance(g, list)):
             return g
         if (a == 0 or b == 0):
@@ -125,7 +157,10 @@ class Tensor():
         return ans
 
     def convolution(self, a, b):
-        if (max(a, b) >= self.sz):
+        """Tensor convolution by index a & b (numerating from 0)"""
+        if (not self.is_num(a) or not self.is_num(b)):
+            raise TypeError("Unknown type of index to convolution")
+        elif (max(a, b) >= self.sz):
             raise TypeError("At least one of convolution index more than "
                             + "tensor dimentions sount")
         ans = Tensor(self.sz - 2, self.sz_one)
